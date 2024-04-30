@@ -3,7 +3,7 @@ package com.temnenkov.singlefilebot.telegram
 interface TelegramBot {
     fun pull(request: PullRequest): PullResponse
 
-    fun push(request: PushRequest)
+    fun push(request: PushRequest): PushResponse
 
     @JvmInline
     value class MessageId(val value: Long)
@@ -24,4 +24,6 @@ interface TelegramBot {
     data class PullResponse(val messages: List<TgMessage>, val maxOffset: Offset?)
 
     data class PushRequest(val addressTO: Address, val messageText: MessageText)
+
+    data class PushResponse(val ok: Boolean?)
 }
