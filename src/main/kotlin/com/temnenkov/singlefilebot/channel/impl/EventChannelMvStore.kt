@@ -1,13 +1,14 @@
 package com.temnenkov.singlefilebot.channel.impl
 
 import com.temnenkov.singlefilebot.channel.EventChannel
+import com.temnenkov.singlefilebot.utils.NowProvider
 import com.temnenkov.singlefilebot.utils.runInTransaction
 import org.h2.mvstore.tx.Transaction
 import org.h2.mvstore.tx.TransactionMap
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 
-class EventChannelMvStore : EventChannel {
+class EventChannelMvStore(val nowProvider: NowProvider) : EventChannel {
     private val counter = AtomicLong(0)
 
     override fun push(
@@ -36,7 +37,7 @@ class EventChannelMvStore : EventChannel {
             val keyIterator = mvMap.keyIterator(null)
             if (keyIterator.hasNext()) {
                 val dbKey = keyIterator.next()
-                if (dbKey.fireDate < Instant.now()) {
+                if (dbKey.fireDate < nowProvider.now()) {
                     val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
                     arg(EventChannel.StoredEvent(eventType, mvMap[dbKey]!!))!!.forEach {
                         store(maps, it, transaction)
@@ -55,6 +56,6 @@ class EventChannelMvStore : EventChannel {
         if (!maps.containsKey(storedEvent.eventType)) {
             maps[storedEvent.eventType] = transaction.openMap(storedEvent.eventType)
         }
-        maps[storedEvent.eventType]!![DbKey(Instant.now(), counter.getAndIncrement())] = storedEvent.payload
+        maps[storedEvent.eventType]!![DbKey(nowProvider.now(), counter.getAndIncrement())] = storedEvent.payload
     }
 }
