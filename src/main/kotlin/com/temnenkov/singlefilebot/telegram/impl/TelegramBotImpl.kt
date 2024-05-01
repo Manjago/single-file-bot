@@ -35,7 +35,7 @@ class TelegramBotImpl(val config: TgParameters) : TelegramBot {
 
         val (messages, maxOffset) =
             if (httpResponse.statusCode() == 200) {
-                logger.info { "got telegram response ${httpResponse.body()}" }
+                logger.debug { "got telegram response ${httpResponse.body()}" }
                 val response = httpResponse.body().fromJson(GetUpdatesResponse::class.java)
                 response.result.asSequence().filter {
                     it.message?.from != null && it.message.text != null
@@ -72,7 +72,7 @@ class TelegramBotImpl(val config: TgParameters) : TelegramBot {
                 logger.error { "bad status code ${httpResponse.statusCode()} text ${httpResponse.body()}" }
                 null
             } else {
-                logger.info { "got telegram response ${httpResponse.body()}" }
+                logger.debug { "got telegram response ${httpResponse.body()}" }
                 httpResponse.body().fromJson(SendMessageResponse::class.java).ok
             }
         return TelegramBot.PushResponse(ok)

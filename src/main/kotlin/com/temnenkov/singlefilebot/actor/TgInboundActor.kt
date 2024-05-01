@@ -19,9 +19,13 @@ class TgInboundActor(
 
             val (messages, maxOffset) = telegramBot.pull(TelegramBot.PullRequest(offset + 1))
 
+            if (messages.isEmpty() || maxOffset == null) {
+                return
+            }
+
             eventChannel.push { db ->
 
-                val newOffset = maxOffset?.value ?: -1L
+                val newOffset = maxOffset.value
                 db.storeValue(STORE_NAME, STORE_KEY, newOffset.toString())
 
                 messages.asSequence().map {
@@ -30,7 +34,9 @@ class TgInboundActor(
                         Instant.now(),
                         it.toJson(),
                     )
-                }.toList()
+                }.toList().also {
+                    logger.info { "Store inbound event: $it with offset $newOffset" }
+                }
             }
         } catch (e: Exception) {
             logger.error(e) { "Actor failed to handle command" }
