@@ -4,7 +4,7 @@ import java.io.Serializable
 import java.time.Instant
 
 interface EventChannel {
-    fun push(eventsProducingAction: () -> List<StoredEvent>)
+    fun push(eventsProducingAction: (Db) -> List<StoredEvent>)
 
     fun pull(
         eventType: String,

@@ -14,11 +14,11 @@ class EventChannelMvStore(
 ) : EventChannel {
     private val counter = AtomicLong(0)
 
-    override fun push(eventsProducingAction: () -> List<EventChannel.StoredEvent>) {
+    override fun push(eventsProducingAction: (EventChannel.Db) -> List<EventChannel.StoredEvent>) {
         val stored: Result<List<Pair<DbKey, EventChannel.StoredEvent>>> =
             mvStoreWrapper.runInTransaction { transaction ->
                 val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
-                eventsProducingAction().map {
+                eventsProducingAction(DbImpl(transaction)).map {
                     store(maps, it, transaction)
                 }.toList()
             }
