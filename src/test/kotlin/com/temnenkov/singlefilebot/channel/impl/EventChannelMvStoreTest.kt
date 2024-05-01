@@ -62,7 +62,7 @@ class EventChannelMvStoreTest {
             listOf(EventChannel.StoredEvent("ev1", now, "test1"))
         }
 
-        eventChannelMvStore.pull("ev1") {
+        eventChannelMvStore.pull("ev1") { it, _ ->
             if (it.payload == "test1") {
                 listOf(EventChannel.StoredEvent("ev2", now, "test2"), EventChannel.StoredEvent("ev3", now, "test3"))
             } else {
@@ -117,7 +117,7 @@ class EventChannelMvStoreTest {
             )
         }
 
-        eventChannelMvStore.pull("ev1") {
+        eventChannelMvStore.pull("ev1") { it, _ ->
             if (it.payload == "test2") {
                 listOf(EventChannel.StoredEvent("ev2", futureDate, "ok"))
             } else {
@@ -158,7 +158,7 @@ class EventChannelMvStoreTest {
             EventChannel.StoredEvent("ev2", dbKeyTarget.fireDate, mapTarget[dbKeyTarget]!!),
         )
 
-        eventChannelMvStore.pull("ev1") {
+        eventChannelMvStore.pull("ev1") { _, _ ->
             throw IllegalStateException("must not enter")
         }
     }

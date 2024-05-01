@@ -31,7 +31,7 @@ class EventChannelMvStore(
 
     override fun pull(
         eventType: String,
-        arg: (EventChannel.StoredEvent) -> List<EventChannel.StoredEvent>?,
+        eventsProduvingAction: (EventChannel.StoredEvent, EventChannel.Db) -> List<EventChannel.StoredEvent>?,
     ) {
         mvStoreWrapper.runInTransaction { transaction ->
             val mvMap: TransactionMap<DbKey, String> = transaction.openMap(eventType)
@@ -40,7 +40,10 @@ class EventChannelMvStore(
                 val dbKey = keyIterator.next()
                 if (dbKey.fireDate <= nowProvider.now()) {
                     val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
-                    arg(EventChannel.StoredEvent(eventType, dbKey.fireDate, mvMap[dbKey]!!))!!.forEach {
+                    eventsProduvingAction(
+                        EventChannel.StoredEvent(eventType, dbKey.fireDate, mvMap[dbKey]!!),
+                        DbImpl(transaction),
+                    )!!.forEach {
                         store(maps, it, transaction)
                     }
                     mvMap.remove(dbKey)
@@ -62,6 +65,25 @@ class EventChannelMvStore(
         val dbKey = DbKey(storedEvent.fireDate, counter.getAndIncrement())
         maps[storedEvent.eventType]!![dbKey] = storedEvent.payload
         return dbKey to storedEvent
+    }
+
+    class DbImpl(val transaction: Transaction) : EventChannel.Db {
+        override fun loadLongValue(
+            collection: String,
+            key: String,
+        ): Long? {
+            val map: TransactionMap<String, Long> = transaction.openMap(collection)
+            return map[key]
+        }
+
+        override fun storeLongValue(
+            collection: String,
+            key: String,
+            value: Long,
+        ) {
+            val map: TransactionMap<String, Long> = transaction.openMap(collection)
+            map[key] = value
+        }
     }
 
     companion object {

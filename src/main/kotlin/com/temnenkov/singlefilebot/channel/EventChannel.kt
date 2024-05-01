@@ -8,7 +8,7 @@ interface EventChannel {
 
     fun pull(
         eventType: String,
-        arg: (StoredEvent) -> List<StoredEvent>?,
+        eventsProduvingAction: (StoredEvent, Db) -> List<StoredEvent>?,
     )
 
     data class StoredEvent(
@@ -16,4 +16,17 @@ interface EventChannel {
         val fireDate: Instant,
         val payload: String,
     ) : Serializable
+
+    interface Db {
+        fun loadLongValue(
+            collection: String,
+            key: String,
+        ): Long?
+
+        fun storeLongValue(
+            collection: String,
+            key: String,
+            value: Long,
+        )
+    }
 }
