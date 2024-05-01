@@ -16,17 +16,12 @@ class EventChannelMvStoreTest {
 
     @Test
     fun push() {
-        eventChannelMvStore.push("123") {
-            listOf(TestStoredEvent("test-1"))
+        eventChannelMvStore.push("target/db123") {
+            listOf(EventChannel.StoredEvent("ev1", "test1"))
         }
-        runInTransaction("123") { ts, t ->
-            val openMap: TransactionMap<DbKey, String> = t.openMap(EventChannelMvStore.eventTypeToString(EventChannel.EventType.TG_INBOUND))
+        runInTransaction("target/db123") { ts, t ->
+            val openMap: TransactionMap<DbKey, String> = t.openMap("ev1")
             println(openMap)
         }
-    }
-
-    class TestStoredEvent(val stringPayload: String) : EventChannel.StoredEvent {
-        override val eventType: EventChannel.EventType
-            get() = EventChannel.EventType.TG_INBOUND
     }
 }
