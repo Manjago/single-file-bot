@@ -3,12 +3,13 @@ package com.temnenkov.singlefilebot.channel.impl
 import com.temnenkov.singlefilebot.channel.EventChannel
 import com.temnenkov.singlefilebot.utils.NowProvider
 import com.temnenkov.singlefilebot.utils.runInTransaction
+import mu.KotlinLogging
 import org.h2.mvstore.tx.Transaction
 import org.h2.mvstore.tx.TransactionMap
-import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 
 class EventChannelMvStore(val nowProvider: NowProvider) : EventChannel {
+    private val logger = KotlinLogging.logger {}
     private val counter = AtomicLong(0)
 
     override fun push(
@@ -43,6 +44,8 @@ class EventChannelMvStore(val nowProvider: NowProvider) : EventChannel {
                         store(maps, it, transaction)
                     }
                     mvMap.remove(dbKey)
+                } else {
+                    logger.debug { "Too early ${dbKey.fireDate}" }
                 }
             }
         }

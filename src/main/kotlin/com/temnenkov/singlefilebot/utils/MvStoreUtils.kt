@@ -1,8 +1,11 @@
 package com.temnenkov.singlefilebot.utils
 
+import mu.KotlinLogging
 import org.h2.mvstore.MVStore
 import org.h2.mvstore.tx.Transaction
 import org.h2.mvstore.tx.TransactionStore
+
+private val logger = KotlinLogging.logger {}
 
 fun <T> runInTransaction(
     dbFile: String?,
@@ -14,7 +17,11 @@ fun <T> runInTransaction(
         return runCatching {
             block(ts, transaction)
         }.onSuccess {
+            logger.debug { "Transaction commited for $it" }
             transaction.commit()
-        }.onFailure { transaction.rollback() }
+        }.onFailure {
+            logger.error(it) { "Transaction rollback" }
+            transaction.rollback()
+        }
     }
 }
