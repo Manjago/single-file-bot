@@ -1,5 +1,13 @@
 package com.temnenkov.singlefilebot
 
-fun main() {
-    println("Hi")
+import mu.KotlinLogging
+
+fun main(args: Array<String>) {
+    if (args.isEmpty()) {
+        logger.error("config not found")
+        return
+    }
+    mainLoop(args[0])
 }
+
+private val logger = KotlinLogging.logger {  }

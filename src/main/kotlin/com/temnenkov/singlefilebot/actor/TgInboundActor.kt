@@ -2,32 +2,30 @@ package com.temnenkov.singlefilebot.actor
 
 import com.temnenkov.singlefilebot.channel.EventChannel
 import com.temnenkov.singlefilebot.telegram.TelegramBot
-import com.temnenkov.singlefilebot.utils.MvStoreWrapper
+import com.temnenkov.singlefilebot.utils.toJson
 import mu.KotlinLogging
-import org.h2.mvstore.tx.TransactionMap
+import java.time.Instant
 
 class TgInboundActor(
     private val telegramBot: TelegramBot,
-    private val mvStoreWrapper: MvStoreWrapper,
     private val eventChannel: EventChannel,
 ) : Runnable {
     override fun run() {
         try {
-            val offset =
-                requireNotNull(
-                    mvStoreWrapper.runInTransaction { transaction ->
-                        val map: TransactionMap<String, Long> = transaction.openMap(STORE_NAME)
-                        map[STORE_KEY]?.let { 0L }
-                    }.getOrElse {
-                        logger.error(it) { "Fail get offset" }
-                        throw IllegalStateException("Fail get offset", it)
-                    },
-                ) { "Offset must be not null" }
+            val offset = requireNotNull(eventChannel.getDbForTransaction().loadLongValue(
+                STORE_NAME, STORE_KEY
+            )?.let { -1L }) { "Offset must be not null" }
 
-            val (messages, maxOffset) = telegramBot.pull(TelegramBot.PullRequest(offset))
+            val (messages, maxOffset) = telegramBot.pull(TelegramBot.PullRequest(offset + 1))
 
-            eventChannel.push {
-                listOf()
+            eventChannel.push { db ->
+
+                db.storeLongValue(STORE_NAME, STORE_KEY, maxOffset?.value ?: -1L)
+
+                messages.asSequence().map {
+                    EventChannel.StoredEvent(TgOutboundActor.INBOUND_CHANNEL,
+                        Instant.now(), it.toJson())
+                }.toList()
             }
         } catch (e: Exception) {
             logger.error(e) { "Actor failed to handle command" }

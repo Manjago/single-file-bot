@@ -11,6 +11,8 @@ interface EventChannel {
         eventsProduvingAction: (StoredEvent, Db) -> List<StoredEvent>?,
     )
 
+    fun getDbForTransaction() : Db
+
     data class StoredEvent(
         val eventType: String,
         val fireDate: Instant,

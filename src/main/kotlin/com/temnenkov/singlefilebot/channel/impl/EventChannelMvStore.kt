@@ -54,6 +54,10 @@ class EventChannelMvStore(
         }
     }
 
+    override fun getDbForTransaction(): EventChannel.Db = mvStoreWrapper.runInTransaction { transaction ->
+        DbImpl(transaction)
+    }.getOrElse { throw IllegalStateException("Fail get DbImpl") }
+
     private fun store(
         maps: MutableMap<String, TransactionMap<DbKey, String>>,
         storedEvent: EventChannel.StoredEvent,
