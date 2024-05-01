@@ -2,9 +2,9 @@ package com.temnenkov.singlefilebot.telegram.impl
 
 import com.temnenkov.singlefilebot.config.TgParameters
 import com.temnenkov.singlefilebot.telegram.TelegramBot
-import com.temnenkov.singlefilebot.telegram.TelegramBot.TgMessage
 import com.temnenkov.singlefilebot.telegram.impl.model.GetUpdatesResponse
 import com.temnenkov.singlefilebot.telegram.impl.model.GetUpdatestRequest
+import com.temnenkov.singlefilebot.telegram.impl.model.Message
 import com.temnenkov.singlefilebot.telegram.impl.model.SendMessageRequest
 import com.temnenkov.singlefilebot.telegram.impl.model.SendMessageResponse
 import com.temnenkov.singlefilebot.utils.fromJson
@@ -40,15 +40,11 @@ class TelegramBotImpl(val config: TgParameters) : TelegramBot {
                 response.result.asSequence().filter {
                     it.message?.from != null && it.message.text != null
                 }.map {
-                    TgMessage(
-                        TelegramBot.MessageId(it.message!!.messageId),
-                        TelegramBot.Address(it.message.from!!.id),
-                        TelegramBot.MessageText(it.message.text!!),
-                    )
-                }.toList() to response.maxOffset()
+                    it.message
+                }.filterNotNull().toList() to response.maxOffset()
             } else {
                 logger.error { "bad status code ${httpResponse.statusCode()} text ${httpResponse.body()}" }
-                listOf<TgMessage>() to null
+                listOf<Message>() to null
             }
 
         return TelegramBot.PullResponse(messages, maxOffset?.let { TelegramBot.Offset(it) })
@@ -62,8 +58,7 @@ class TelegramBotImpl(val config: TgParameters) : TelegramBot {
 
         val requestBuilder =
             HttpRequest.newBuilder(URI.create("https://api.telegram.org/${config.token}/sendMessage"))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(config.pushTimeout))
+                .header("Content-Type", "application/json").timeout(Duration.ofSeconds(config.pushTimeout))
                 .POST(HttpRequest.BodyPublishers.ofString(httpRequest.toJson()))
 
         val httpResponse =

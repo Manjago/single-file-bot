@@ -11,7 +11,7 @@ interface EventChannel {
         eventsProduvingAction: (StoredEvent, Db) -> List<StoredEvent>?,
     )
 
-    fun doInTransaction(action: (Db) -> String) : String
+    fun doInTransaction(action: (Db) -> String): String
 
     data class StoredEvent(
         val eventType: String,

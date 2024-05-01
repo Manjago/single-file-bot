@@ -12,9 +12,10 @@ class TgInboundActor(
 ) : Runnable {
     override fun run() {
         try {
-            val offset = eventChannel.doInTransaction {  db ->
-                db.loadValue(STORE_NAME, STORE_KEY) ?: "-1"
-            }.toLong()
+            val offset =
+                eventChannel.doInTransaction { db ->
+                    db.loadValue(STORE_NAME, STORE_KEY) ?: "-1"
+                }.toLong()
 
             val (messages, maxOffset) = telegramBot.pull(TelegramBot.PullRequest(offset + 1))
 
@@ -24,8 +25,11 @@ class TgInboundActor(
                 db.storeValue(STORE_NAME, STORE_KEY, newOffset.toString())
 
                 messages.asSequence().map {
-                    EventChannel.StoredEvent(TgOutboundActor.INBOUND_CHANNEL,
-                        Instant.now(), it.toJson())
+                    EventChannel.StoredEvent(
+                        TgOutboundActor.INBOUND_CHANNEL,
+                        Instant.now(),
+                        it.toJson(),
+                    )
                 }.toList()
             }
         } catch (e: Exception) {

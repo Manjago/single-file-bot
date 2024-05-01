@@ -10,4 +10,4 @@ fun main(args: Array<String>) {
     mainLoop(args[0])
 }
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }

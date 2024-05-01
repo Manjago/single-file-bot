@@ -6,9 +6,9 @@ import com.temnenkov.singlefilebot.telegram.impl.model.Message
 import com.temnenkov.singlefilebot.utils.fromJson
 
 class TgOutboundActor(
-    private val telegramBot: TelegramBot, private val eventChannel: EventChannel
+    private val telegramBot: TelegramBot,
+    private val eventChannel: EventChannel,
 ) : Runnable {
-
     override fun run() {
         eventChannel.pull(INBOUND_CHANNEL) { event, _ ->
 
@@ -19,8 +19,9 @@ class TgOutboundActor(
             if (addressTo != null) {
                 telegramBot.push(
                     TelegramBot.PushRequest(
-                        TelegramBot.Address(addressTo), TelegramBot.MessageText("Hi ${message.text}")
-                    )
+                        TelegramBot.Address(addressTo),
+                        TelegramBot.MessageText("Hi ${message.text}"),
+                    ),
                 )
             }
             listOf()
