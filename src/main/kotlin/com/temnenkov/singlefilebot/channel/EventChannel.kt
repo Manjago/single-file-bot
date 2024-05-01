@@ -11,7 +11,7 @@ interface EventChannel {
         eventsProduvingAction: (StoredEvent, Db) -> List<StoredEvent>?,
     )
 
-    fun getDbForTransaction() : Db
+    fun doInTransaction(action: (Db) -> String) : String
 
     data class StoredEvent(
         val eventType: String,
@@ -20,15 +20,15 @@ interface EventChannel {
     ) : Serializable
 
     interface Db {
-        fun loadLongValue(
+        fun loadValue(
             collection: String,
             key: String,
-        ): Long?
+        ): String?
 
-        fun storeLongValue(
+        fun storeValue(
             collection: String,
             key: String,
-            value: Long,
+            value: String,
         )
     }
 }

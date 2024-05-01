@@ -54,9 +54,12 @@ class EventChannelMvStore(
         }
     }
 
-    override fun getDbForTransaction(): EventChannel.Db = mvStoreWrapper.runInTransaction { transaction ->
-        DbImpl(transaction)
-    }.getOrElse { throw IllegalStateException("Fail get DbImpl") }
+    override fun doInTransaction(action: (EventChannel.Db) -> String): String {
+        return mvStoreWrapper.runInTransaction { transaction ->
+            val db = DbImpl(transaction)
+            action(db)
+        }.getOrThrow()
+    }
 
     private fun store(
         maps: MutableMap<String, TransactionMap<DbKey, String>>,
@@ -71,21 +74,21 @@ class EventChannelMvStore(
         return dbKey to storedEvent
     }
 
-    class DbImpl(val transaction: Transaction) : EventChannel.Db {
-        override fun loadLongValue(
+    class DbImpl(private val transaction: Transaction) : EventChannel.Db {
+        override fun loadValue(
             collection: String,
             key: String,
-        ): Long? {
-            val map: TransactionMap<String, Long> = transaction.openMap(collection)
+        ): String? {
+            val map: TransactionMap<String, String> = transaction.openMap(collection)
             return map[key]
         }
 
-        override fun storeLongValue(
+        override fun storeValue(
             collection: String,
             key: String,
-            value: Long,
+            value: String,
         ) {
-            val map: TransactionMap<String, Long> = transaction.openMap(collection)
+            val map: TransactionMap<String, String> = transaction.openMap(collection)
             map[key] = value
         }
     }
