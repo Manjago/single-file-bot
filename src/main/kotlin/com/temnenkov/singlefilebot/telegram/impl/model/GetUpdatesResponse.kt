@@ -8,6 +8,6 @@ data class GetUpdatesResponse(
         if (result.isEmpty()) {
             null
         } else {
-            result.maxBy { it.updateId }.updateId
+            result.maxOf { it.updateId }
         }
 }

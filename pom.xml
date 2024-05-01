@@ -18,6 +18,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <logback.version>1.2.11</logback.version>
         <kotlin-logging.version>2.1.23</kotlin-logging.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
     </properties>
 
     <build>
@@ -113,7 +114,19 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.10.0</version>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
