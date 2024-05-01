@@ -15,7 +15,7 @@ class TgInboundActor(
         try {
             val offset =
                 requireNotNull(
-                    mvStoreWrapper.runInTransaction { _, transaction ->
+                    mvStoreWrapper.runInTransaction { transaction ->
                         val map: TransactionMap<String, Long> = transaction.openMap(STORE_NAME)
                         map[STORE_KEY]?.let { 0L }
                     }.getOrElse {

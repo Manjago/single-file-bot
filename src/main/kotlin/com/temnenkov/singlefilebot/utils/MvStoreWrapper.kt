@@ -9,10 +9,10 @@ class MvStoreWrapper(dbFile: String) {
     private val store = MVStore.open(dbFile)
     private val ts = TransactionStore(store)
 
-    fun <T> runInTransaction(block: (TransactionStore, Transaction) -> T): Result<T> {
+    fun <T> runInTransaction(block: (Transaction) -> T): Result<T> {
         val transaction = ts.begin()
         return runCatching {
-            block(ts, transaction)
+            block(transaction)
         }.onSuccess {
             logger.debug { "Transaction commited for $it" }
             transaction.commit()

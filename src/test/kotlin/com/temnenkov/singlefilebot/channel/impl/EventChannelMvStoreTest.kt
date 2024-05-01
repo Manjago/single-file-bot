@@ -40,7 +40,7 @@ class EventChannelMvStoreTest {
         }
 
         val map =
-            mvStoreWrapper.runInTransaction { _, t ->
+            mvStoreWrapper.runInTransaction { t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev0")
                 openMap
             }.getOrNull()
@@ -71,17 +71,17 @@ class EventChannelMvStoreTest {
         }
 
         val map1 =
-            mvStoreWrapper.runInTransaction { _, t ->
+            mvStoreWrapper.runInTransaction { t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev1")
                 openMap
             }.getOrNull()
         val map2 =
-            mvStoreWrapper.runInTransaction { _, t ->
+            mvStoreWrapper.runInTransaction { t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev2")
                 openMap
             }.getOrNull()
         val map3 =
-            mvStoreWrapper.runInTransaction { _, t ->
+            mvStoreWrapper.runInTransaction { t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev3")
                 openMap
             }.getOrNull()
@@ -126,13 +126,13 @@ class EventChannelMvStoreTest {
         }
 
         val mapSource =
-            mvStoreWrapper.runInTransaction { _, t ->
+            mvStoreWrapper.runInTransaction { t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev1")
                 openMap
             }.getOrNull()
 
         val mapTarget =
-            mvStoreWrapper.runInTransaction { _, t ->
+            mvStoreWrapper.runInTransaction { t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev2")
                 openMap
             }.getOrNull()
