@@ -4,12 +4,10 @@ import java.io.Serializable
 
 interface EventChannel {
     fun push(
-        storeId: String?,
         eventsProducingAction: () -> List<StoredEvent>,
     )
 
     fun pull(
-        storeId: String?,
         eventType: String,
         arg: (StoredEvent) -> List<StoredEvent>?,
     )

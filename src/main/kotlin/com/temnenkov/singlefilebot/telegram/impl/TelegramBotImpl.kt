@@ -17,7 +17,6 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 class TelegramBotImpl(val config: TgParameters) : TelegramBot {
-    private val logger = KotlinLogging.logger {}
 
     private val httpClient: HttpClient =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(config.httpClientConnectTimeout))
@@ -83,5 +82,9 @@ class TelegramBotImpl(val config: TgParameters) : TelegramBot {
                 httpResponse.body().fromJson(SendMessageResponse::class.java).ok
             }
         return TelegramBot.PushResponse(ok)
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
     }
 }

@@ -2,9 +2,10 @@ package com.temnenkov.singlefilebot.channel.impl
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.temnenkov.singlefilebot.channel.EventChannel
+import com.temnenkov.singlefilebot.utils.MvStoreWrapper
 import com.temnenkov.singlefilebot.utils.NowProvider
-import com.temnenkov.singlefilebot.utils.runInTransaction
 import org.h2.mvstore.tx.TransactionMap
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -16,11 +17,18 @@ import kotlin.test.assertTrue
 class EventChannelMvStoreTest {
     private lateinit var eventChannelMvStore: EventChannelMvStore
     private lateinit var nowAnswers: MutableList<Instant>
+    private lateinit var mvStoreWrapper: MvStoreWrapper
 
     @BeforeEach
     fun setUp() {
+        mvStoreWrapper = MvStoreWrapper("target/{${NanoIdUtils.randomNanoId()}}")
         nowAnswers = mutableListOf()
-        eventChannelMvStore = EventChannelMvStore(TestNowProvider(nowAnswers))
+        eventChannelMvStore = EventChannelMvStore(mvStoreWrapper, TestNowProvider(nowAnswers))
+    }
+
+    @AfterEach
+    fun tearDown() {
+        mvStoreWrapper.release()
     }
 
     @Test
@@ -28,13 +36,13 @@ class EventChannelMvStoreTest {
         val now = Instant.now()
         nowAnswers.add(now)
         val dbName = "target/${NanoIdUtils.randomNanoId()}"
-        eventChannelMvStore.push(dbName) {
-            listOf(EventChannel.StoredEvent("ev1", "test1"))
+        eventChannelMvStore.push() {
+            listOf(EventChannel.StoredEvent("ev0", "test0"))
         }
 
         val map =
-            runInTransaction(dbName) { _, t ->
-                val openMap: TransactionMap<DbKey, String> = t.openMap("ev1")
+            mvStoreWrapper.runInTransaction() { _, t ->
+                val openMap: TransactionMap<DbKey, String> = t.openMap("ev0")
                 openMap
             }.getOrNull()
 
@@ -42,7 +50,7 @@ class EventChannelMvStoreTest {
         assertEquals(1, map.size)
         val dbKey = DbKey(now, 0L)
         assertEquals(dbKey, map.keys.firstOrNull())
-        assertEquals(EventChannel.StoredEvent("ev1", "test1"), EventChannel.StoredEvent("ev1", map[dbKey]!!))
+        assertEquals(EventChannel.StoredEvent("ev0", "test0"), EventChannel.StoredEvent("ev0", map[dbKey]!!))
     }
 
     @Test
@@ -55,11 +63,11 @@ class EventChannelMvStoreTest {
 
         val dbName = "target/${NanoIdUtils.randomNanoId()}"
 
-        eventChannelMvStore.push(dbName) {
+        eventChannelMvStore.push() {
             listOf(EventChannel.StoredEvent("ev1", "test1"))
         }
 
-        eventChannelMvStore.pull(dbName, "ev1") {
+        eventChannelMvStore.pull("ev1") {
             if (it.payload == "test1") {
                 listOf(EventChannel.StoredEvent("ev2", "test2"), EventChannel.StoredEvent("ev3", "test3"))
             } else {
@@ -68,17 +76,17 @@ class EventChannelMvStoreTest {
         }
 
         val map1 =
-            runInTransaction(dbName) { _, t ->
+            mvStoreWrapper.runInTransaction() { _, t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev1")
                 openMap
             }.getOrNull()
         val map2 =
-            runInTransaction(dbName) { _, t ->
+            mvStoreWrapper.runInTransaction() { _, t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev2")
                 openMap
             }.getOrNull()
         val map3 =
-            runInTransaction(dbName) { _, t ->
+            mvStoreWrapper.runInTransaction() { _, t ->
                 val openMap: TransactionMap<DbKey, String> = t.openMap("ev3")
                 openMap
             }.getOrNull()

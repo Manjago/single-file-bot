@@ -6,7 +6,6 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicLong
 
 class CustomThreadFactory(private val threadPrefix: String) : ThreadFactory {
-    private val logger = KotlinLogging.logger {}
     private val backingThreadFactory = Executors.defaultThreadFactory()
     private val counter = AtomicLong(0)
 
@@ -17,5 +16,9 @@ class CustomThreadFactory(private val threadPrefix: String) : ThreadFactory {
             logger.error(throwable) { "thread ${thread.name} threw exception ${throwable.message}" }
         }
         return newThread
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
     }
 }

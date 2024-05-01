@@ -1,23 +1,22 @@
 package com.temnenkov.singlefilebot.channel.impl
 
 import com.temnenkov.singlefilebot.channel.EventChannel
+import com.temnenkov.singlefilebot.utils.MvStoreWrapper
 import com.temnenkov.singlefilebot.utils.NowProvider
-import com.temnenkov.singlefilebot.utils.runInTransaction
 import mu.KotlinLogging
 import org.h2.mvstore.tx.Transaction
 import org.h2.mvstore.tx.TransactionMap
 import java.util.concurrent.atomic.AtomicLong
 
-class EventChannelMvStore(val nowProvider: NowProvider) : EventChannel {
-    private val logger = KotlinLogging.logger {}
+class EventChannelMvStore(
+    val mvStoreWrapper: MvStoreWrapper,
+    val nowProvider: NowProvider) : EventChannel {
     private val counter = AtomicLong(0)
 
     override fun push(
-        storeId: String?,
         eventsProducingAction: () -> List<EventChannel.StoredEvent>,
     ) {
-        runInTransaction(
-            storeId,
+        mvStoreWrapper.runInTransaction(
         ) { ts, transaction ->
             val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
             eventsProducingAction().forEach {
@@ -27,12 +26,10 @@ class EventChannelMvStore(val nowProvider: NowProvider) : EventChannel {
     }
 
     override fun pull(
-        storeId: String?,
         eventType: String,
         arg: (EventChannel.StoredEvent) -> List<EventChannel.StoredEvent>?,
     ) {
-        runInTransaction(
-            storeId,
+        mvStoreWrapper.runInTransaction(
         ) { ts, transaction ->
             val mvMap: TransactionMap<DbKey, String> = transaction.openMap(eventType)
             val keyIterator = mvMap.keyIterator(null)
@@ -60,5 +57,9 @@ class EventChannelMvStore(val nowProvider: NowProvider) : EventChannel {
             maps[storedEvent.eventType] = transaction.openMap(storedEvent.eventType)
         }
         maps[storedEvent.eventType]!![DbKey(nowProvider.now(), counter.getAndIncrement())] = storedEvent.payload
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
     }
 }

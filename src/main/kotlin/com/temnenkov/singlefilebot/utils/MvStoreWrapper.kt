@@ -5,14 +5,13 @@ import org.h2.mvstore.MVStore
 import org.h2.mvstore.tx.Transaction
 import org.h2.mvstore.tx.TransactionStore
 
-private val logger = KotlinLogging.logger {}
+class MvStoreWrapper(dbFile: String) {
+    private val store = MVStore.open(dbFile)
+    private val ts = TransactionStore(store)
 
-fun <T> runInTransaction(
-    dbFile: String?,
-    block: (TransactionStore, Transaction) -> T,
-): Result<T> {
-    MVStore.open(dbFile).use { store: MVStore ->
-        val ts = TransactionStore(store)
+    fun <T> runInTransaction(
+        block: (TransactionStore, Transaction) -> T,
+    ): Result<T> {
         val transaction = ts.begin()
         return runCatching {
             block(ts, transaction)
@@ -23,5 +22,11 @@ fun <T> runInTransaction(
             logger.error(it) { "Transaction rollback" }
             transaction.rollback()
         }
+    }
+
+    fun release() = store.close()
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
     }
 }
