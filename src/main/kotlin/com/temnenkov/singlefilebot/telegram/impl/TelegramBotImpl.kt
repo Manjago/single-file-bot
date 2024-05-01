@@ -17,7 +17,6 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 class TelegramBotImpl(val config: TgParameters) : TelegramBot {
-
     private val httpClient: HttpClient =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(config.httpClientConnectTimeout))
             .version(HttpClient.Version.HTTP_1_1).build()

@@ -10,18 +10,22 @@ import java.util.concurrent.atomic.AtomicLong
 
 class EventChannelMvStore(
     val mvStoreWrapper: MvStoreWrapper,
-    val nowProvider: NowProvider) : EventChannel {
+    val nowProvider: NowProvider,
+) : EventChannel {
     private val counter = AtomicLong(0)
 
-    override fun push(
-        eventsProducingAction: () -> List<EventChannel.StoredEvent>,
-    ) {
-        mvStoreWrapper.runInTransaction(
-        ) { ts, transaction ->
-            val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
-            eventsProducingAction().forEach {
-                store(maps, it, transaction)
+    override fun push(eventsProducingAction: () -> List<EventChannel.StoredEvent>) {
+        val stored: Result<List<Pair<DbKey, EventChannel.StoredEvent>>> =
+            mvStoreWrapper.runInTransaction { ts, transaction ->
+                val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
+                eventsProducingAction().map {
+                    store(maps, it, transaction)
+                }.toList()
             }
+        logger.debug { "Pushed $stored" }
+        stored.onFailure {
+            logger.error(it) { "Fail push" }
+            throw it
         }
     }
 
@@ -29,15 +33,14 @@ class EventChannelMvStore(
         eventType: String,
         arg: (EventChannel.StoredEvent) -> List<EventChannel.StoredEvent>?,
     ) {
-        mvStoreWrapper.runInTransaction(
-        ) { ts, transaction ->
+        mvStoreWrapper.runInTransaction { ts, transaction ->
             val mvMap: TransactionMap<DbKey, String> = transaction.openMap(eventType)
             val keyIterator = mvMap.keyIterator(null)
             if (keyIterator.hasNext()) {
                 val dbKey = keyIterator.next()
-                if (dbKey.fireDate < nowProvider.now()) {
+                if (dbKey.fireDate <= nowProvider.now()) {
                     val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
-                    arg(EventChannel.StoredEvent(eventType, mvMap[dbKey]!!))!!.forEach {
+                    arg(EventChannel.StoredEvent(eventType, dbKey.fireDate, mvMap[dbKey]!!))!!.forEach {
                         store(maps, it, transaction)
                     }
                     mvMap.remove(dbKey)
@@ -52,11 +55,13 @@ class EventChannelMvStore(
         maps: MutableMap<String, TransactionMap<DbKey, String>>,
         storedEvent: EventChannel.StoredEvent,
         transaction: Transaction,
-    ) {
+    ): Pair<DbKey, EventChannel.StoredEvent> {
         if (!maps.containsKey(storedEvent.eventType)) {
             maps[storedEvent.eventType] = transaction.openMap(storedEvent.eventType)
         }
-        maps[storedEvent.eventType]!![DbKey(nowProvider.now(), counter.getAndIncrement())] = storedEvent.payload
+        val dbKey = DbKey(storedEvent.fireDate, counter.getAndIncrement())
+        maps[storedEvent.eventType]!![dbKey] = storedEvent.payload
+        return dbKey to storedEvent
     }
 
     companion object {
