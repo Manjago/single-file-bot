@@ -16,7 +16,7 @@ class EventChannelMvStore(
 
     override fun push(eventsProducingAction: () -> List<EventChannel.StoredEvent>) {
         val stored: Result<List<Pair<DbKey, EventChannel.StoredEvent>>> =
-            mvStoreWrapper.runInTransaction { ts, transaction ->
+            mvStoreWrapper.runInTransaction { _, transaction ->
                 val maps: MutableMap<String, TransactionMap<DbKey, String>> = mutableMapOf()
                 eventsProducingAction().map {
                     store(maps, it, transaction)
@@ -33,7 +33,7 @@ class EventChannelMvStore(
         eventType: String,
         arg: (EventChannel.StoredEvent) -> List<EventChannel.StoredEvent>?,
     ) {
-        mvStoreWrapper.runInTransaction { ts, transaction ->
+        mvStoreWrapper.runInTransaction { _, transaction ->
             val mvMap: TransactionMap<DbKey, String> = transaction.openMap(eventType)
             val keyIterator = mvMap.keyIterator(null)
             if (keyIterator.hasNext()) {
