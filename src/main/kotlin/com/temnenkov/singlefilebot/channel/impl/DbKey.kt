@@ -1,8 +1,9 @@
 package com.temnenkov.singlefilebot.channel.impl
 
+import java.io.Serializable
 import java.time.Instant
 
-class DbKey(val fireDate: Instant, val id: Long) : Comparable<DbKey> {
+class DbKey(val fireDate: Instant, val id: Long) : Serializable, Comparable<DbKey> {
     override fun compareTo(other: DbKey): Int = COMPARATOR.compare(this, other)
 
     override fun equals(other: Any?): Boolean =

@@ -1,6 +1,8 @@
 package com.temnenkov.singlefilebot.channel.impl
 
 import com.temnenkov.singlefilebot.channel.EventChannel
+import com.temnenkov.singlefilebot.utils.runInTransaction
+import org.h2.mvstore.tx.TransactionMap
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -14,8 +16,12 @@ class EventChannelMvStoreTest {
 
     @Test
     fun push() {
-        eventChannelMvStore.push {
+        eventChannelMvStore.push("123") {
             listOf(TestStoredEvent("test-1"))
+        }
+        runInTransaction("123") { ts, t ->
+            val openMap: TransactionMap<DbKey, String> = t.openMap(EventChannelMvStore.eventTypeToString(EventChannel.EventType.TG_INBOUND))
+            println(openMap)
         }
     }
 
